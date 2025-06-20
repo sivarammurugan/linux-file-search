@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+"""
+Linux File Search App - Executable Launcher
+"""
+
+import sys
+import os
+
+# Add the current directory to Python path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, current_dir)
+
+def main():
+    """Main launcher function"""
+    import argparse
+    
+    # Check if user wants CLI mode or passed other arguments
+    if len(sys.argv) > 1 and (sys.argv[1] == '--cli' or 
+                             (sys.argv[1] not in ['--gui', '--help', '-h'])):
+        # Launch CLI with all arguments except our own
+        try:
+            from main import main as cli_main
+            # Remove launcher-specific arguments
+            filtered_args = [arg for arg in sys.argv[1:] if arg != '--cli']
+            sys.argv = [sys.argv[0]] + filtered_args
+            cli_main()
+        except ImportError as e:
+            print(f"Error launching CLI: {e}")
+            print("Make sure all dependencies are installed: pip install -r requirements.txt")
+            sys.exit(1)
+    elif len(sys.argv) > 1 and sys.argv[1] == '--gui':
+        # Launch GUI
+        try:
+            from gui import main as gui_main
+            gui_main()
+        except ImportError as e:
+            print(f"Error launching GUI: {e}")
+            print("Make sure all dependencies are installed: pip install -r requirements.txt")
+            sys.exit(1)
+    elif len(sys.argv) > 1 and sys.argv[1] in ['--help', '-h']:
+        # Show help
+        print("Linux File Search App")
+        print("")
+        print("Usage:")
+        print("  filesearch                    Launch GUI (default)")
+        print("  filesearch --gui              Launch GUI explicitly") 
+        print("  filesearch --cli [args...]    Launch CLI with arguments")
+        print("")
+        print("CLI Arguments:")
+        print("  search <query>                Search for files")
+        print("  rebuild                       Rebuild the index")
+        print("  update                        Update the index incrementally")
+        print("  paths                         Show indexed paths")
+        print("  --monitor                     Start file monitoring")
+        print("  --stop-monitor               Stop file monitoring")
+        print("  --help                       Show help")
+    else:
+        # Default to GUI
+        try:
+            from gui import main as gui_main
+            gui_main()
+        except ImportError:
+            # Fall back to CLI
+            try:
+                from main import main as cli_main
+                cli_main()
+            except ImportError as e:
+                print(f"Error: Cannot launch application: {e}")
+                print("Make sure all dependencies are installed: pip install -r requirements.txt")
+                sys.exit(1)
+
+if __name__ == "__main__":
+    main()

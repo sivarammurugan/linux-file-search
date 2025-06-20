@@ -1,0 +1,26 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=File Search
+GenericName=File Search Tool
+Comment=Fast file search application for Linux - Find files instantly like Everything for Windows
+Exec=filesearch --gui
+Icon=/home/siva/.local/share/icons/filesearch.svg
+Terminal=false
+Categories=Utility;System;FileTools;FileManager;Office;
+Keywords=search;file;find;index;everything;locate;fast;instant;
+StartupNotify=true
+StartupWMClass=File Search - Linux
+MimeType=inode/directory;
+X-GNOME-UsesNotifications=true
+X-Cinnamon-Provides=panel
+NoDisplay=false
+Actions=CLI;Build;
+
+[Desktop Action CLI]
+Name=Open CLI Mode
+Exec=gnome-terminal -- filesearch --cli
+
+[Desktop Action Build]
+Name=Build Index
+Exec=filesearch --cli --build
