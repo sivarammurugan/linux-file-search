@@ -59,3 +59,17 @@ test_*.txt
 
 # Log files
 *.log
+
+# pytest cache
+.pytest_cache/
+.coverage
+
+# Documentation build
+docs/_build/
+
+# PyInstaller working directories
+*.manifest
+
+# macOS specific
+.AppleDouble
+.LSOverride
