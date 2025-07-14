@@ -197,12 +197,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- 🐛 **Bug Reports**: [Issues](https://github.com/yourusername/linux-file-search-app/issues)
-- 💡 **Feature Requests**: [Discussions](https://github.com/yourusername/linux-file-search-app/discussions)
-- 📚 **Documentation**: [Wiki](https://github.com/yourusername/linux-file-search-app/wiki)
+- 🐛 **Bug Reports**: [Issues](https://github.com/sivarammurugan/linux-file-search-app/issues)
+- 💡 **Feature Requests**: [Discussions](https://github.com/sivarammurugan/linux-file-search-app/discussions)
+- 📚 **Documentation**: [Wiki](https://github.com/sivarammurugan/linux-file-search-app/wiki)
 
 ---
 
 ⭐ **Star this repository if you find it useful!**
 
-Made with ❤️ for the Linux community
+Made with ❤️ for the Linux community 
