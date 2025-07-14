@@ -17,7 +17,7 @@ class FileSearchGUI:
     """GUI wrapper for the file search application"""
     
     def __init__(self):
-        self.root = tk.Tk()
+        self.root = tk.Tk(className="Filesearch")
         self.root.title("File Search - Linux")
         self.root.geometry("800x600")
         
