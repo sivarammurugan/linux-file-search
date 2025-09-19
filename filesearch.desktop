@@ -4,7 +4,8 @@ Type=Application
 Name=File Search
 GenericName=File Search Tool
 Comment=Fast file search application for Linux - Find files instantly like Everything for Windows
-Exec=filesearch --gui
+Exec=/home/siva/projects/search/dist/filesearch-gui
+Path=/home/siva/projects/search/dist
 Icon=/home/siva/.local/share/icons/filesearch.svg
 Terminal=false
 Categories=Utility;System;FileTools;FileManager;Office;
@@ -19,8 +20,8 @@ Actions=CLI;Build;
 
 [Desktop Action CLI]
 Name=Open CLI Mode
-Exec=gnome-terminal -- filesearch --cli
+Exec=gnome-terminal -- /home/siva/projects/search/dist/filesearch --cli
 
 [Desktop Action Build]
 Name=Build Index
-Exec=filesearch --cli --build
+Exec=/home/siva/projects/search/dist/filesearch --cli --build

@@ -136,34 +136,17 @@ class FileSearchGUI:
         self.root.bind('<Control-q>', lambda e: self.root.quit())
         
     def prompt_initial_index(self):
-        """Prompt user to build initial index or update existing ones"""
+        """Automatically update existing indexes or prompt to build new ones"""
         # Check if there are existing indexes
         indexed_paths = self.app.indexer.get_indexed_paths()
         
         if indexed_paths:
-            # Show existing indexes and ask what to do
-            paths_info = "\n".join([
-                f"• {path} ({file_count} files, indexed {time.strftime('%Y-%m-%d %H:%M', time.localtime(last_indexed))})"
-                for path, last_indexed, file_count in indexed_paths
-            ])
-            
-            result = messagebox.askyesnocancel(
-                "Existing Index Found", 
-                f"Found existing file indexes:\n\n{paths_info}\n\n"
-                f"Would you like to:\n"
-                f"• Yes: Update existing indexes incrementally (faster)\n"
-                f"• No: Build a new index from scratch\n"
-                f"• Cancel: Continue without indexing"
-            )
-            
-            if result is True:  # Yes - incremental update
-                self.incremental_update_index()
-            elif result is False:  # No - build new index
-                self.build_index()
-            # Cancel - do nothing
-            
+            # Automatically update existing indexes in the background
+            self.status_var.set("Updating file index in background...")
+            # Use a small delay to let the UI load first
+            self.root.after(500, lambda: self.incremental_update_index(silent=True))
         else:
-            # No existing index - ask to build one
+            # No existing index - ask to build one (only for first-time users)
             if messagebox.askyesno("Build Index", 
                                   "No file index found. Would you like to build one?\n"
                                   "This will help you search files faster."):
@@ -352,13 +335,20 @@ class FileSearchGUI:
         messagebox.showerror("Index Error", error_msg)
         self.status_var.set("Index build failed")
     
-    def incremental_update_index(self):
+    def incremental_update_index(self, silent=False):
         """Perform incremental update of existing indexes"""
         # Get list of indexed paths
         indexed_paths = self.app.indexer.get_indexed_paths()
         
         if not indexed_paths:
-            messagebox.showinfo("No Index", "No paths have been indexed yet. Please build an index first.")
+            if not silent:
+                messagebox.showinfo("No Index", "No paths have been indexed yet. Please build an index first.")
+            return
+            
+        if silent:
+            # Automatically update all paths in background
+            for path, _, _ in indexed_paths:
+                self._perform_incremental_update(path, silent=True)
             return
             
         # If only one path, update it directly
@@ -453,12 +443,13 @@ class FileSearchGUI:
         ttk.Button(button_frame, text="Update All", command=update_all).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
     
-    def _perform_incremental_update(self, path):
+    def _perform_incremental_update(self, path, silent=False):
         """Perform incremental update for a specific path"""
-        # Show progress bar
-        self.progress_bar.pack(side=tk.RIGHT, padx=(10, 0))
-        self.progress_bar.start()
-        self.status_var.set(f"Updating index for {path}...")
+        if not silent:
+            # Show progress bar
+            self.progress_bar.pack(side=tk.RIGHT, padx=(10, 0))
+            self.progress_bar.start()
+            self.status_var.set(f"Updating index for {path}...")
         
         print(f"Incrementally updating index for {path}...")
         
@@ -515,7 +506,7 @@ class FileSearchGUI:
                                 
                             # Update status periodically
                             total_processed = len(new_files) + len(updated_files)
-                            if total_processed % 500 == 0:
+                            if not silent and total_processed % 500 == 0:
                                 self.root.after(0, lambda count=total_processed: 
                                                self.status_var.set(f"Scanning... {count} changes found"))
                                 
@@ -527,18 +518,19 @@ class FileSearchGUI:
                 
                 # Update the database in main thread
                 self.root.after(0, lambda: self._apply_incremental_changes(
-                    path, current_files, new_files, updated_files))
+                    path, current_files, new_files, updated_files, silent))
                 
             except Exception as ex:
                 error_msg = str(ex)
                 print(f"Incremental update error: {error_msg}")
-                self.root.after(0, lambda: self._handle_incremental_error(error_msg))
+                if not silent:
+                    self.root.after(0, lambda: self._handle_incremental_error(error_msg))
         
         thread = threading.Thread(target=update_worker)
         thread.daemon = True
         thread.start()
     
-    def _apply_incremental_changes(self, path, current_files, new_files, updated_files):
+    def _apply_incremental_changes(self, path, current_files, new_files, updated_files, silent=False):
         """Apply incremental changes to the database (runs in main thread)"""
         try:
             current_time = int(time.time())
@@ -588,21 +580,32 @@ class FileSearchGUI:
             
             self.app.indexer.conn.commit()
             
-            # Hide progress bar and show success
-            self.progress_bar.stop()
-            self.progress_bar.pack_forget()
-            
-            total_changes = len(new_files) + len(updated_files) + len(deleted_files)
-            message = (f"Incremental update complete for {os.path.basename(path)}:\n"
-                      f"New: {len(new_files)}, Updated: {len(updated_files)}, "
-                      f"Deleted: {len(deleted_files)}")
-            self.status_var.set(f"Update complete - {total_changes} changes")
-            print(message)
+            if not silent:
+                # Hide progress bar and show success
+                self.progress_bar.stop()
+                self.progress_bar.pack_forget()
+                
+                total_changes = len(new_files) + len(updated_files) + len(deleted_files)
+                message = (f"Incremental update complete for {os.path.basename(path)}:\n"
+                          f"New: {len(new_files)}, Updated: {len(updated_files)}, "
+                          f"Deleted: {len(deleted_files)}")
+                self.status_var.set(f"Update complete - {total_changes} changes")
+                print(message)
+            else:
+                # Silent mode - just update status briefly
+                total_changes = len(new_files) + len(updated_files) + len(deleted_files)
+                if total_changes > 0:
+                    self.status_var.set(f"Index updated - {total_changes} changes")
+                    # Clear status after a few seconds
+                    self.root.after(3000, lambda: self.status_var.set("Ready"))
+                else:
+                    self.status_var.set("Ready")
             
         except Exception as ex:
             error_msg = str(ex)
             print(f"Apply changes error: {error_msg}")
-            self._handle_incremental_error(error_msg)
+            if not silent:
+                self._handle_incremental_error(error_msg)
     
     def _handle_incremental_error(self, error_msg):
         """Handle incremental update errors"""
